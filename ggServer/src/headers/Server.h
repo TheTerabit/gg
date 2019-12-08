@@ -12,6 +12,9 @@
 #include <time.h>
 #include <pthread.h>
 #include <iostream>
+#include <vector>
+
+#include "Message.h"
 
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
@@ -28,6 +31,8 @@ class Server
 	private:
 		int server_socket_descriptor;
 		char reuse_addr_val;
+		vector <Message> messages;
+	
 
 	
 	public:
@@ -35,5 +40,5 @@ class Server
 		void setup();
 		void start();	
 		void handleConnection(int connection_socket_descriptor);
-		static void *ThreadBehavior(void *t_data);
+		static void *readFromClient(void *t_data);
 };

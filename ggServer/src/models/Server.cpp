@@ -78,7 +78,7 @@ void Server::handleConnection(int connection_socket_descriptor) {
 	struct thread_data_t *t_data = new thread_data_t;
 	(*t_data).x = connection_socket_descriptor;
 	
-    create_result = pthread_create(&thread1, NULL, Server::ThreadBehavior, (void *)t_data);
+    create_result = pthread_create(&thread1, NULL, Server::readFromClient, (void *)t_data);
     if (create_result){
        printf("Error while creating new thread: %d\n", create_result);
        exit(-1);
@@ -90,7 +90,7 @@ void Server::handleConnection(int connection_socket_descriptor) {
 }
 
 
-void* Server::ThreadBehavior(void *t_data)
+void* Server::readFromClient(void *t_data)
 {
 	//free resources when killed
     pthread_detach(pthread_self());
