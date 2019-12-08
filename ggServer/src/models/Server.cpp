@@ -76,7 +76,7 @@ void Server::handleConnection(int connection_socket_descriptor) {
 
 	//create new instance of structure and fill with data that will be send to thread function
 	struct thread_data_t *t_data = new thread_data_t;
-	(*t_data).x = connection_socket_descriptor;
+	(*t_data).clientFd = connection_socket_descriptor;
 	
     create_result = pthread_create(&thread1, NULL, Server::readFromClient, (void *)t_data);
     if (create_result){
@@ -84,9 +84,7 @@ void Server::handleConnection(int connection_socket_descriptor) {
        exit(-1);
     }
 
-	cout << "Po utworzeniu procesu - " << connection_socket_descriptor << endl;
-
-    //TODO (przy zadaniu 1) odbieranie -> wyświetlanie albo klawiatura -> wysyłanie
+	cout << "Created thread - " << connection_socket_descriptor << endl;
 }
 
 
@@ -95,21 +93,79 @@ void* Server::readFromClient(void *t_data)
 	//free resources when killed
     pthread_detach(pthread_self());
     struct thread_data_t *th_data = (struct thread_data_t*)t_data;
-    //dostęp do pól struktury: (*th_data).pole
-    //TODO (przy zadaniu 1) klawiatura -> wysyłanie albo odbieranie -> wyświetlanie
-	char buf[50];
+
+	int readResult = 1;
+	char buffer[BUFFER_SIZE];
 	
-	while(1)
+	//reading from client
+	while(readResult > 0)
 	{
-		cout << "W procesie - " << (*th_data).x << endl;
-		sleep(1);
+		memset(buffer, 0, sizeof(buffer));
+		readResult = read((*th_data).clientFd, buffer, sizeof(buffer));
+		
+		if(readResult > 0)
+		{
+			cout << "In thread - " << (*th_data).clientFd << endl;
+			cout << "Message: " << buffer;
+
+			string messageHeader = buffer;
+			int messageType = buffer[0] - '0'; //type of the message
+			int messageSize = atoi(messageHeader.substr(1, messageHeader.length() - 1).c_str()); //size of the message
+
+			string messageBody = getMessageBody((*th_data).clientFd, messageSize);
+			
+			if(messageType == 0)
+			{
+				registerUser(messageBody);
+			}
+			else if(messageType == 1)
+			{
+				loginUser(messageBody);
+			}
+			else
+			{
+				
+			}
+			
+		}
 	}
 	
-	while(1)
-	{
-		read((*th_data).x, buf, 50);
-		cout << (*th_data).x << endl;	
-	}
-	
+	cout << "Killed thread: " << (*th_data).clientFd << endl; 
     pthread_exit(NULL);
+}
+
+
+string Server::getMessageBody(int fd, int size)
+{
+	char buffer[BUFFER_SIZE];
+	int receivedSize = 0;
+	int readResult = 1;
+	string message;
+
+	while(receivedSize < size && readResult > 0)
+	{
+		memset(buffer, 0, sizeof(buffer));
+		readResult = read(fd, buffer, sizeof(buffer));
+		receivedSize += readResult;
+		message += buffer;
+	}
+	
+	return message;
+}
+
+
+bool Server::registerUser(string messageBody)
+{
+	int delimiterIndex = messageBody.find("&");
+	
+	string username = messageBody.substr(0, delimiterIndex);
+	string password = messageBody.substr(delimiterIndex + 1, messageBody.length());
+	
+	
+}
+
+
+bool Server::loginUser(string messageBody)
+{
+	
 }

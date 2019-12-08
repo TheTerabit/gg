@@ -18,12 +18,13 @@
 
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
+#define BUFFER_SIZE 50
 
 using namespace std;
 
 struct thread_data_t
 {
-	int x;
+	int clientFd;
 };
 
 class Server
@@ -33,12 +34,16 @@ class Server
 		char reuse_addr_val;
 		vector <Message> messages;
 	
+		void handleConnection(int connection_socket_descriptor);
+		static void *readFromClient(void *t_data);
+		static string getMessageBody(int fd, int size);
+		static bool registerUser(string messageBody);
+		static bool loginUser(string messageBody);
+	
 
 	
 	public:
 		Server();
 		void setup();
-		void start();	
-		void handleConnection(int connection_socket_descriptor);
-		static void *readFromClient(void *t_data);
+		void start();		
 };

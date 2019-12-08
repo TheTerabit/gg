@@ -10,8 +10,8 @@ class Message
 {
 	private:
 		char type;
-		int sender;
-		int receiver;
+		int senderFd;
+		int receiverFd;
 		string content;
 	
 	public:
