@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "Message.h"
+#include "User.h"
 
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
@@ -32,7 +33,8 @@ class Server
 	private:
 		int server_socket_descriptor;
 		char reuse_addr_val;
-		vector <Message> messages;
+		static vector <Message> messages;
+		static vector <User> users;
 	
 		void handleConnection(int connection_socket_descriptor);
 		static void *readFromClient(void *t_data);

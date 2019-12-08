@@ -1,6 +1,10 @@
 #include "../headers/Server.h"
 
 
+vector <User> Server::users;
+vector <Message> Server::messages;
+
+
 Server::Server()
 {
 	reuse_addr_val = 1;
@@ -161,11 +165,21 @@ bool Server::registerUser(string messageBody)
 	string username = messageBody.substr(0, delimiterIndex);
 	string password = messageBody.substr(delimiterIndex + 1, messageBody.length());
 	
+	//checks for existing username
+	for(size_t i = 0; i < users.size(); i++)
+		if(users[i].getUsername() == username)
+		{
+			cout << "User already exists: " << username << endl;
+			return false;	
+		}
 	
+	users.push_back(User(username, password));
+	cout << "User has been created: " << username << endl;
+	return true;
 }
 
 
 bool Server::loginUser(string messageBody)
 {
-	
+	return true;
 }
