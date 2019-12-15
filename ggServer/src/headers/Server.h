@@ -15,11 +15,14 @@
 #include <vector>
 
 #include "Message.h"
-#include "User.h"
 
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
 #define BUFFER_SIZE 50
+
+#define MESSAGE_TYPE_REGISTER 0
+#define MESSAGE_TYPE_LOGIN 1
+#define MESSAGE_TYPE_SEND 2
 
 using namespace std;
 
@@ -36,16 +39,23 @@ class Server
 		static vector <Message> messages;
 		static vector <User> users;
 	
+		//handle connection thread	
 		void handleConnection(int connection_socket_descriptor);
-		static void *readFromClient(void *t_data);
-		static string getMessageBody(int fd, int size);
-		static bool registerUser(string messageBody);
-		static bool loginUser(string messageBody);
 	
-
+		//sending messages to all clients thread and its methods
+		static void *sendToAllClientsThread(void *t_data);
+		static bool sendMessage(int senderFd, int receiverFd, string content);
+		
+		//reading from single client thread and its methods
+		static void *readFromSingleClientThread(void *t_data);
+		static string getMessageBody(int clienFd, int size);
+		static bool registerUser(int clientFd, string messageBody, User* &loggedUser);
+		static bool loginUser(int clientFd, string messageBody, User* &loggedUser);
+		static bool createMessageToSend(string messageContent, User* &loggedUser);
+	
 	
 	public:
 		Server();
 		void setup();
-		void start();		
+		void start();
 };

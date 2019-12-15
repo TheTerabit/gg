@@ -10,11 +10,27 @@ using namespace std;
 class User
 {
 	private:
+		static int numberOfUsers;
+	
+		int id;
+		int fd;
+	
 		string username;
-		string password;
+		string password;	
+		bool online;
 	
 	public:
-		User(string username, string password);
+		User();
+		User(int fd, string username, string password);
+	
+		int getId();
+		void setFd(int fd);
+		int getFd();
+	
 		string getUsername();
 		bool validatePassword(string password);
+	
+		void goOnline();
+		void goOffline();
+		bool isOnline();
 };
