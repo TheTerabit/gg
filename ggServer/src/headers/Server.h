@@ -20,10 +20,16 @@
 #define SERVER_PORT 1234
 #define QUEUE_SIZE 5
 #define BUFFER_SIZE 50
+#define SERVER_ID -1
 
 #define MESSAGE_TYPE_REGISTER 0
 #define MESSAGE_TYPE_LOGIN 1
-#define MESSAGE_TYPE_SEND 2
+#define MESSAGE_TYPE_CLIENT_CLIENT 2
+#define MESSAGE_TYPE_SERVER_CLIENT 3
+#define MESSAGE_TYPE_FOR_NEW_CLIENT 4
+#define MESSAGE_TYPE_NOTIFICATIONS 5
+#define USER_ONLINE 1
+#define USER_OFFLINE 0
 
 
 using namespace std;
@@ -47,8 +53,9 @@ class Server
 		//sending messages to all clients thread and its methods
 		static void *sendToAllClientsThread(void *t_data);
 		static bool isReceiverOnline(int receiverId);
-		static bool sendMessage(int senderFd, int receiverFd, string content);
+		static bool sendMessage(int messageType, int senderFd, int receiverFd, string content);
 		static int getUserFdById(int userId);
+		static void createMessageForNewClient(int loggedUserId);
 		
 		//reading from single client thread and its methods
 		static void *readFromSingleClientThread(void *t_data);

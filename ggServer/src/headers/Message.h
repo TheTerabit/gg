@@ -4,9 +4,6 @@
 #include <string.h>
 #include <iostream>
 
-#define MESSAGE_CLIENT_CLIENT 0
-#define NOTIFICATION_CLIENT_ALL_CLIENTS 1
-
 
 using namespace std;
 
@@ -21,7 +18,7 @@ class Message
 		string content;
 	
 	public:
-		Message(int type, int senderFd, int receiverFd, string content);
+		Message(int type, int senderId, int receiverId, string content);
 	
 		int getType();
 		int getSenderId();
@@ -29,4 +26,5 @@ class Message
 		int getSenderFd();
 		int getReceiverFd();
 		string getContent();
+		void setReceiverId(int receiverId);
 };

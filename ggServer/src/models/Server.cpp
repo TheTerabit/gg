@@ -112,24 +112,45 @@ void* Server::sendToAllClientsThread(void *t_data)
     pthread_detach(pthread_self());
 	bool sendResult;
 	
+	//sending loop
 	while(1)
 	{
+		//if messages vector is not empty
 		if(messages.size() > 0)
 		{
+			//create additional vector for messages ready to send
 			vector <Message> messagesToSend;
 			
+			//check all messages
 			for(size_t i = 0; i < messages.size(); i++)
 			{
-				if(isReceiverOnline(messages[i].getReceiverId()) == true)
+				//if message is type of notification
+				if(messages[i].getType() == MESSAGE_TYPE_NOTIFICATIONS)
+				{
+					//add one message of this type for all users to messagesToSend vector
+					for(size_t j = 0; j < users.size(); j++)
+					{
+						//do not send notification to yourself
+						if(messages[i].getSenderId() != users[j].getId())
+						{
+							messages[i].setReceiverId(users[j].getId());
+							messagesToSend.push_back(messages[i]);
+						}
+					}
+					messages.erase(messages.begin() + i);
+				}
+				//if not check if receiver is online and add message to vector that contains messages ready to send and delete from the previous one
+				else if(isReceiverOnline(messages[i].getReceiverId()) == true)
 				{
 					messagesToSend.push_back(messages[i]);
 					messages.erase(messages.begin() + i);
 				}
 			}
 			
+			//send all messages in vector messagesToSend
 			for(size_t i = 0; i < messagesToSend.size(); i++)
 			{
-				sendResult = sendMessage(messagesToSend[i].getSenderId(), messages[i].getReceiverId(), messages[i].getContent());
+				sendResult = sendMessage(messagesToSend[i].getType(), messagesToSend[i].getSenderId(), messages[i].getReceiverId(), messages[i].getContent());
 				
 				if(sendResult == true)
 				{
@@ -185,7 +206,7 @@ void* Server::readFromSingleClientThread(void *t_data)
 				messageBody = getMessageBody((*th_data).clientFd, messageSize);
 				loggedUserId = loginUser((*th_data).clientFd, messageBody);
 			}
-			else if(messageType == MESSAGE_TYPE_SEND)
+			else if(messageType == MESSAGE_TYPE_CLIENT_CLIENT)
 			{
 				if(loggedUserId != -1)
 				{
@@ -199,6 +220,9 @@ void* Server::readFromSingleClientThread(void *t_data)
 	}
 	
 	cout << "Killed thread: " << (*th_data).clientFd << endl; 
+	
+	userGoOfflineById(loggedUserId);
+	createNotificationMessageUserStatus(loggedUserId, USER_OFFLINE);
     pthread_exit(NULL);
 }
 
@@ -221,7 +245,9 @@ int Server::registerUser(int clientFd, string messageBody)
 	//push new user to vector and assign his id to variable
 	users.push_back(User(clientFd, username, password));
 	int loggedUserId = users[users.size() - 1].getId();
+	
 	userGoOnlineById(loggedUserId);
+	createMessageForNewClient(loggedUserId);
 	
 	cout << "User has been created with login: " << username << " and password: " << password << endl;
 	return loggedUserId;
@@ -242,6 +268,8 @@ int Server::loginUser(int clientFd, string messageBody)
 			users[i].setFd(clientFd); //change user's fd
 			int loggedUserId = users[i].getId();
 			userGoOnlineById(loggedUserId);
+			createMessageForNewClient(loggedUserId);
+			createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
 			
 			cout << "User has logged in with login: " << username << " and password: " << password << endl;
 			
@@ -254,6 +282,24 @@ int Server::loginUser(int clientFd, string messageBody)
 }
 
 
+void Server::createMessageForNewClient(int loggedUserId)
+{
+	string messageContent = "";
+	
+	for(size_t i = 0; i < users.size(); i++)
+	{
+		if(users[i].getId() != loggedUserId)
+			messageContent += "&" + to_string(users[i].getId()) + "%" + users[i].getUsername();
+	}
+	
+	if(messageContent != "")
+	{
+		messageContent.erase(messageContent.begin());	
+		messages.push_back(Message(MESSAGE_TYPE_SERVER_CLIENT, SERVER_ID, loggedUserId, messageContent));
+	}
+}
+
+
 bool Server::createMessageToSend(int loggedUserId, string messageBody)
 {
 	int delimiterIndex = messageBody.find("&");
@@ -262,7 +308,7 @@ bool Server::createMessageToSend(int loggedUserId, string messageBody)
 	int senderId = loggedUserId;
 	string messageContent = messageBody.substr(delimiterIndex + 1, messageBody.length());
 	
-	messages.push_back(Message(MESSAGE_CLIENT_CLIENT, senderId, receiverId, messageContent));
+	messages.push_back(Message(MESSAGE_TYPE_CLIENT_CLIENT, senderId, receiverId, messageContent));
 	
 	cout << "Message has been been created from: " << senderId << " to: " << receiverId << " content: " << messageContent << endl;
 	
@@ -270,19 +316,18 @@ bool Server::createMessageToSend(int loggedUserId, string messageBody)
 }
 
 
-bool Server::sendMessage(int senderId, int receiverId, string content)
+bool Server::sendMessage(int messageType, int senderId, int receiverId, string content)
 {
 	int receiverFd = getUserFdById(receiverId);
 	if(receiverFd == -1) return false;
 	
 	string bodyMessage = to_string(senderId) + "&" + content;
-	string headerMessage = "2" + to_string(bodyMessage.length());
+	string headerMessage = to_string(messageType) + "&" + to_string(bodyMessage.length() - 1);
 	
 	//send message with type and size of the message
 	//bufferHeader contains type of the message, sign & and length of the incoming message
 	char bufferHeader[headerMessage.length() + 1];
 	strcpy(bufferHeader, headerMessage.c_str());
-	cout << bufferHeader << endl;
 	
 	int writeHeaderResult = write(receiverFd, bufferHeader, sizeof(bufferHeader));
 	if(writeHeaderResult == -1) return false;
@@ -296,9 +341,6 @@ bool Server::sendMessage(int senderId, int receiverId, string content)
 	if(writeBodyResult == -1) return false;
 	else return true;
 }
-
-
-bool Server::sendNotificationUserOnline()
 
 
 string Server::getMessageBody(int clientFd, int size)
@@ -318,6 +360,13 @@ string Server::getMessageBody(int clientFd, int size)
 	}
 	
 	return message;
+}
+
+
+string Server::createNotificationMessageUserStatus(int userId, int userStatus)
+{
+	string notificationContent = to_string(userStatus);
+	messages.push_back(Message(MESSAGE_TYPE_NOTIFICATIONS, userId, NULL, notificationContent))
 }
 
 

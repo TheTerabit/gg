@@ -44,3 +44,9 @@ string Message::getContent()
 {
 	return this->content;
 }
+
+
+void Message::setReceiverId(int receiverId)
+{
+	this->receiverId = receiverId;
+}
