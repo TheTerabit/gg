@@ -1,11 +1,30 @@
 #include "../headers/Message.h"
 
 
-Message::Message(int senderFd, int receiverFd, string content)
+Message::Message(int type, int senderId, int receiverId, string content)
 {
-	this->senderFd = senderFd;
-	this->receiverFd = receiverFd;
+	this->type = type;
+	this->senderId = senderId;
+	this->receiverId = receiverId;
 	this->content = content;
+}
+
+
+int Message::getType()
+{
+	return this->type;
+}
+
+
+int Message::getSenderId()
+{
+	return this->senderId;
+}
+
+
+int Message::getReceiverId()
+{
+	return this->receiverId;
 }
 
 

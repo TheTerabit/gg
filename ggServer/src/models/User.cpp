@@ -17,10 +17,9 @@ User::User(int fd, string username, string password)
 	this->password = password;
 	this->fd = fd;
 	
+	cout << "USER ID: " << numberOfUsers << endl;
 	this->id = numberOfUsers;
 	numberOfUsers++;
-	
-	cout << "USER ID: " << numberOfUsers << endl;
 }
 
 

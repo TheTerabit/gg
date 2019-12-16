@@ -14,6 +14,7 @@
 #include <iostream>
 #include <vector>
 
+#include "User.h"
 #include "Message.h"
 
 #define SERVER_PORT 1234
@@ -23,6 +24,7 @@
 #define MESSAGE_TYPE_REGISTER 0
 #define MESSAGE_TYPE_LOGIN 1
 #define MESSAGE_TYPE_SEND 2
+
 
 using namespace std;
 
@@ -44,14 +46,18 @@ class Server
 	
 		//sending messages to all clients thread and its methods
 		static void *sendToAllClientsThread(void *t_data);
+		static bool isReceiverOnline(int receiverId);
 		static bool sendMessage(int senderFd, int receiverFd, string content);
+		static int getUserFdById(int userId);
 		
 		//reading from single client thread and its methods
 		static void *readFromSingleClientThread(void *t_data);
 		static string getMessageBody(int clienFd, int size);
-		static bool registerUser(int clientFd, string messageBody, User* &loggedUser);
-		static bool loginUser(int clientFd, string messageBody, User* &loggedUser);
-		static bool createMessageToSend(string messageContent, User* &loggedUser);
+		static int registerUser(int clientFd, string messageBody);
+		static int loginUser(int clientFd, string messageBody);
+		static bool createMessageToSend(int loggedUserId, string messageContent);
+		static void userGoOnlineById(int userId);
+		static void userGoOfflineById(int userId);
 	
 	
 	public:
