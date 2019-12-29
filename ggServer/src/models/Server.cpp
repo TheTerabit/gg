@@ -3,11 +3,14 @@
 
 vector <User> Server::users;
 vector <Message> Server::messages;
-
+pthread_mutex_t Server::usersMutex;
+pthread_mutex_t Server::messagesMutex;
 
 Server::Server()
 {
 	reuse_addr_val = 1;
+	messagesMutex = PTHREAD_MUTEX_INITIALIZER;
+	usersMutex = PTHREAD_MUTEX_INITIALIZER;
 }
 
 
@@ -115,6 +118,7 @@ void* Server::sendToAllClientsThread(void *t_data)
 	//sending loop
 	while(1)
 	{
+		pthread_mutex_lock(&messagesMutex);
 		//if messages vector is not empty
 		if(messages.size() > 0)
 		{
@@ -128,6 +132,7 @@ void* Server::sendToAllClientsThread(void *t_data)
 				//if message is type of notification
 				if(messages[i].getType() == MESSAGE_TYPE_NOTIFICATIONS)
 				{
+					pthread_mutex_lock(&usersMutex);
 					//add one message of this type for all users to messagesToSend vector
 					for(size_t j = 0; j < users.size(); j++)
 					{
@@ -138,13 +143,21 @@ void* Server::sendToAllClientsThread(void *t_data)
 							messagesToSend.push_back(messages[i]);
 						}
 					}
+					pthread_mutex_unlock(&usersMutex);
 					messagesToRemove.push_back(i);
 				}
 				//if not check if receiver is online and add message to vector that contains messages ready to send and delete from the previous one
-				else if(isReceiverOnline(messages[i].getReceiverId()) == true)
+				else
 				{
-					messagesToSend.push_back(messages[i]);
-					messagesToRemove.push_back(i);
+					pthread_mutex_lock(&usersMutex);
+					
+					if(isReceiverOnline(messages[i].getReceiverId()) == true)
+					{
+						messagesToSend.push_back(messages[i]);
+						messagesToRemove.push_back(i);
+					}
+					
+					pthread_mutex_unlock(&usersMutex);
 				}
 			}
 			
@@ -166,6 +179,7 @@ void* Server::sendToAllClientsThread(void *t_data)
 				else cout << "Sending message went wrong from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
 			}
 		}
+		pthread_mutex_unlock(&messagesMutex);
 	}
 
 	cout << "Killed sender thread." << endl; 
@@ -265,6 +279,7 @@ int Server::registerUser(int clientFd, string messageBody)
 	string username = messageBody.substr(0, delimiterIndex);
 	string password = messageBody.substr(delimiterIndex + 1, messageBody.length());
 	
+	pthread_mutex_lock(&usersMutex);
 	//checks for existing username
 	for(size_t i = 0; i < users.size(); i++)
 		if(users[i].getUsername() == username)
@@ -273,6 +288,7 @@ int Server::registerUser(int clientFd, string messageBody)
 	//push new user to vector and assign his id to variable
 	users.push_back(User(clientFd, username, password));
 	int loggedUserId = users[users.size() - 1].getId();
+	pthread_mutex_unlock(&usersMutex);
 	
 	cout << "User has been created with login: " << username << " and password: " << password << endl;
 	return loggedUserId;
@@ -286,6 +302,7 @@ int Server::loginUser(int clientFd, string messageBody)
 	string username = messageBody.substr(0, delimiterIndex);
 	string password = messageBody.substr(delimiterIndex + 1, messageBody.length());
 	
+	pthread_mutex_lock(&usersMutex);
 	for(size_t i = 0; i < users.size(); i++)
 	{
 		if(users[i].getUsername() == username && users[i].validatePassword(password))
@@ -298,6 +315,7 @@ int Server::loginUser(int clientFd, string messageBody)
 			return loggedUserId;
 		}
 	}
+	pthread_mutex_unlock(&usersMutex);
 	
 	return -1;
 }
@@ -307,16 +325,21 @@ void Server::createMessageForNewClient(int loggedUserId)
 {
 	string messageContent = "";
 	
+	pthread_mutex_lock(&usersMutex);
 	for(size_t i = 0; i < users.size(); i++)
 	{
 		if(users[i].getId() != loggedUserId)
 			messageContent += "&" + to_string(users[i].getId()) + "%" + users[i].getUsername() + "%" + to_string(users[i].isOnline());
 	}
+	pthread_mutex_unlock(&usersMutex);
 	
 	if(messageContent != "")
 	{
-		messageContent.erase(messageContent.begin());	
+		messageContent.erase(messageContent.begin());
+		
+		pthread_mutex_lock(&messagesMutex);
 		messages.push_back(Message(MESSAGE_TYPE_SERVER_CLIENT, SERVER_ID, loggedUserId, messageContent));
+		pthread_mutex_unlock(&messagesMutex);
 	}
 }
 
@@ -329,7 +352,9 @@ bool Server::createMessageToSend(int loggedUserId, string messageBody)
 	int senderId = loggedUserId;
 	string messageContent = messageBody.substr(delimiterIndex + 1, messageBody.length());
 	
+	pthread_mutex_lock(&messagesMutex);
 	messages.push_back(Message(MESSAGE_TYPE_CLIENT_CLIENT, senderId, receiverId, messageContent));
+	pthread_mutex_unlock(&messagesMutex);
 	
 	cout << "Message has been been created from: " << senderId << " to: " << receiverId << " content: " << messageContent << endl;
 	
@@ -339,7 +364,10 @@ bool Server::createMessageToSend(int loggedUserId, string messageBody)
 
 bool Server::sendMessage(int messageType, int senderId, int receiverId, string content)
 {
+	pthread_mutex_lock(&usersMutex);
 	int receiverFd = getUserFdById(receiverId);
+	pthread_mutex_unlock(&usersMutex);
+	
 	if(receiverFd == -1) return false;
 	
 	string bodyMessage = to_string(senderId) + "&" + content;
@@ -386,8 +414,13 @@ string Server::getMessageBody(int clientFd, int size)
 
 void Server::createNotificationMessageUserStatus(int userId, int userStatus)
 {
+	pthread_mutex_lock(&usersMutex);
 	string notificationContent = getUsernameById(userId) + "%" + to_string(userStatus);
+	pthread_mutex_unlock(&usersMutex);
+	
+	pthread_mutex_lock(&messagesMutex);
 	messages.push_back(Message(MESSAGE_TYPE_NOTIFICATIONS, userId, -1, notificationContent));
+	pthread_mutex_unlock(&messagesMutex);
 }
 
 
@@ -404,11 +437,11 @@ bool Server::isReceiverOnline(int receiverId)
 
 
 string Server::getUsernameById(int userId)
-{
+{	
 	for(size_t i = 0; i < users.size(); i ++)
 		if(users[i].getId() == userId)
 			return users[i].getUsername();
-	
+		
 	return NULL;
 }
 
@@ -420,27 +453,34 @@ int Server::getUserFdById(int userId)
 		if(users[i].getId() == userId)
 			return users[i].getFd();
 	}
-	
+		
 	return -1;
 }
 
 
 void Server::userGoOnlineById(int userId)
 {
+	pthread_mutex_lock(&usersMutex);
+	
 	for(size_t i = 0; i < users.size(); i++)
 	{
 		if(users[i].getId() == userId)
 			users[i].goOnline();
 	}
 	
+	pthread_mutex_unlock(&usersMutex);
 }
 
 
 void Server::userGoOfflineById(int userId)
 {
+	pthread_mutex_lock(&usersMutex);
+	
 	for(size_t i = 0; i < users.size(); i++)
 	{
 		if(users[i].getId() == userId)
 			users[i].goOffline();
 	}
+	
+	pthread_mutex_unlock(&usersMutex);
 }

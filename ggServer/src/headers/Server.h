@@ -46,6 +46,8 @@ class Server
 		char reuse_addr_val;
 		static vector <Message> messages;
 		static vector <User> users;
+		static pthread_mutex_t messagesMutex;
+		static pthread_mutex_t usersMutex;
 	
 		//handle connection thread	
 		void handleConnection(int connection_socket_descriptor);
