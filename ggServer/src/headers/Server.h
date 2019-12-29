@@ -57,6 +57,7 @@ class Server
 		static int getUserFdById(int userId);
 		static void createMessageForNewClient(int loggedUserId);
 		static void createNotificationMessageUserStatus(int userId, int userStatus);
+		static string getUsernameById(int userId);
 
 		
 		//reading from single client thread and its methods

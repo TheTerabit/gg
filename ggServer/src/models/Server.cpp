@@ -120,6 +120,7 @@ void* Server::sendToAllClientsThread(void *t_data)
 		{
 			//create additional vector for messages ready to send
 			vector <Message> messagesToSend;
+			vector <int> messagesToRemove;
 			
 			//check all messages
 			for(size_t i = 0; i < messages.size(); i++)
@@ -137,27 +138,30 @@ void* Server::sendToAllClientsThread(void *t_data)
 							messagesToSend.push_back(messages[i]);
 						}
 					}
-					messages.erase(messages.begin() + i);
+					messagesToRemove.push_back(i);
 				}
 				//if not check if receiver is online and add message to vector that contains messages ready to send and delete from the previous one
 				else if(isReceiverOnline(messages[i].getReceiverId()) == true)
 				{
 					messagesToSend.push_back(messages[i]);
-					messages.erase(messages.begin() + i);
+					messagesToRemove.push_back(i);
 				}
+			}
+			
+			//delete messages that has been added to messagesToSend vector
+			for(size_t i = 0; i < messagesToRemove.size(); i++)
+			{
+				messages.erase(messages.begin() + messagesToRemove[i]);
 			}
 			
 			//send all messages in vector messagesToSend
 			for(size_t i = 0; i < messagesToSend.size(); i++)
 			{
-				sendResult = sendMessage(messagesToSend[i].getType(), messagesToSend[i].getSenderId(), messages[i].getReceiverId(), messages[i].getContent());
+				sendResult = sendMessage(messagesToSend[i].getType(), messagesToSend[i].getSenderId(), messagesToSend[i].getReceiverId(), messagesToSend[i].getContent());
 				
 				if(sendResult == true)
 				{
 					cout << "Message has been sent from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
-					
-					//remove message from vector when has been sent
-					messagesToSend.erase(messagesToSend.begin() + i);
 				}
 				else cout << "Sending message went wrong from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
 			}
@@ -199,12 +203,39 @@ void* Server::readFromSingleClientThread(void *t_data)
 			if(messageType == MESSAGE_TYPE_REGISTER)
 			{
 				messageBody = getMessageBody((*th_data).clientFd, messageSize);
-				loggedUserId = registerUser((*th_data).clientFd, messageBody);
+				int newUserId = registerUser((*th_data).clientFd, messageBody);
+				
+				//if there is not error
+				if(newUserId != -1) 
+				{
+					loggedUserId = newUserId;
+					
+					userGoOnlineById(loggedUserId);
+					createMessageForNewClient(loggedUserId);
+					createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
+				}
+				else
+				{
+					cout << "User already exists." << endl;
+				}
 			}
 			else if(messageType == MESSAGE_TYPE_LOGIN)
 			{
 				messageBody = getMessageBody((*th_data).clientFd, messageSize);
-				loggedUserId = loginUser((*th_data).clientFd, messageBody);
+				int newUserId = loginUser((*th_data).clientFd, messageBody);
+				
+				if(newUserId != -1)
+				{
+					loggedUserId = newUserId;
+					
+					userGoOnlineById(loggedUserId);
+					createMessageForNewClient(loggedUserId);
+					createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
+				}
+				else
+				{
+					cout << "Wrong username or password." << endl;
+				}
 			}
 			else if(messageType == MESSAGE_TYPE_CLIENT_CLIENT)
 			{
@@ -237,17 +268,11 @@ int Server::registerUser(int clientFd, string messageBody)
 	//checks for existing username
 	for(size_t i = 0; i < users.size(); i++)
 		if(users[i].getUsername() == username)
-		{
-			cout << "User already exists: " << username << endl;
 			return -1;	
-		}
 	
 	//push new user to vector and assign his id to variable
 	users.push_back(User(clientFd, username, password));
 	int loggedUserId = users[users.size() - 1].getId();
-	
-	userGoOnlineById(loggedUserId);
-	createMessageForNewClient(loggedUserId);
 	
 	cout << "User has been created with login: " << username << " and password: " << password << endl;
 	return loggedUserId;
@@ -267,9 +292,6 @@ int Server::loginUser(int clientFd, string messageBody)
 		{
 			users[i].setFd(clientFd); //change user's fd
 			int loggedUserId = users[i].getId();
-			userGoOnlineById(loggedUserId);
-			createMessageForNewClient(loggedUserId);
-			createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
 			
 			cout << "User has logged in with login: " << username << " and password: " << password << endl;
 			
@@ -277,7 +299,6 @@ int Server::loginUser(int clientFd, string messageBody)
 		}
 	}
 	
-	cout << "Wrong username or password." << endl;
 	return -1;
 }
 
@@ -365,7 +386,7 @@ string Server::getMessageBody(int clientFd, int size)
 
 void Server::createNotificationMessageUserStatus(int userId, int userStatus)
 {
-	string notificationContent = to_string(userStatus);
+	string notificationContent = getUsernameById(userId) + "%" + to_string(userStatus);
 	messages.push_back(Message(MESSAGE_TYPE_NOTIFICATIONS, userId, -1, notificationContent));
 }
 
@@ -379,6 +400,16 @@ bool Server::isReceiverOnline(int receiverId)
 	}
 	
 	return false;
+}
+
+
+string Server::getUsernameById(int userId)
+{
+	for(size_t i = 0; i < users.size(); i ++)
+		if(users[i].getId() == userId)
+			return users[i].getUsername();
+	
+	return NULL;
 }
 
 
