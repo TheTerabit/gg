@@ -56,6 +56,8 @@ class Server
 		static bool sendMessage(int messageType, int senderFd, int receiverFd, string content);
 		static int getUserFdById(int userId);
 		static void createMessageForNewClient(int loggedUserId);
+		static void createNotificationMessageUserStatus(int userId, int userStatus);
+
 		
 		//reading from single client thread and its methods
 		static void *readFromSingleClientThread(void *t_data);

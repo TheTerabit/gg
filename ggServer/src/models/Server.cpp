@@ -289,7 +289,7 @@ void Server::createMessageForNewClient(int loggedUserId)
 	for(size_t i = 0; i < users.size(); i++)
 	{
 		if(users[i].getId() != loggedUserId)
-			messageContent += "&" + to_string(users[i].getId()) + "%" + users[i].getUsername();
+			messageContent += "&" + to_string(users[i].getId()) + "%" + users[i].getUsername() + "%" + to_string(users[i].isOnline());
 	}
 	
 	if(messageContent != "")
@@ -363,10 +363,10 @@ string Server::getMessageBody(int clientFd, int size)
 }
 
 
-string Server::createNotificationMessageUserStatus(int userId, int userStatus)
+void Server::createNotificationMessageUserStatus(int userId, int userStatus)
 {
 	string notificationContent = to_string(userStatus);
-	messages.push_back(Message(MESSAGE_TYPE_NOTIFICATIONS, userId, NULL, notificationContent))
+	messages.push_back(Message(MESSAGE_TYPE_NOTIFICATIONS, userId, -1, notificationContent));
 }
 
 
