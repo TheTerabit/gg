@@ -18,6 +18,7 @@ class Message
 		string content;
 	
 	public:
+		Message(int type, int receiverFd, string content);
 		Message(int type, int senderId, int receiverId, string content);
 	
 		int getType();

@@ -1,6 +1,13 @@
 #include "../headers/Message.h"
 
 
+Message::Message(int type, int receiverFd, string content)
+{
+	this->type = type;
+	this->receiverFd = receiverFd;
+	this->content = content;
+}
+
 Message::Message(int type, int senderId, int receiverId, string content)
 {
 	this->type = type;

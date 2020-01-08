@@ -6,8 +6,9 @@ vector <Message> Server::messages;
 pthread_mutex_t Server::usersMutex;
 pthread_mutex_t Server::messagesMutex;
 
-Server::Server()
+Server::Server(int serverPort)
 {
+	this->serverPort = serverPort;
 	reuse_addr_val = 1;
 	messagesMutex = PTHREAD_MUTEX_INITIALIZER;
 	usersMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -23,7 +24,7 @@ void Server::setup()
 	memset(&server_address, 0, sizeof(struct sockaddr));
 	server_address.sin_family = AF_INET;
 	server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-	server_address.sin_port = htons(SERVER_PORT);
+	server_address.sin_port = htons(serverPort);
 
 	//create socket
 	server_socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
@@ -129,15 +130,21 @@ void* Server::sendToAllClientsThread(void *t_data)
 			//check all messages
 			for(size_t i = 0; i < messages.size(); i++)
 			{
+				//if the message is type of response
+				if(messages[i].getType() == MESSAGE_TYPE_RESPONSE)
+				{
+					messagesToSend.push_back(messages[i]);
+					messagesToRemove.push_back(i);
+				}
 				//if message is type of notification
-				if(messages[i].getType() == MESSAGE_TYPE_NOTIFICATIONS)
+				else if(messages[i].getType() == MESSAGE_TYPE_NOTIFICATIONS)
 				{
 					pthread_mutex_lock(&usersMutex);
 					//add one message of this type for all users to messagesToSend vector
 					for(size_t j = 0; j < users.size(); j++)
 					{
 						//do not send notification to yourself
-						if(messages[i].getSenderId() != users[j].getId())
+						if(messages[i].getSenderId() != users[j].getId() && isReceiverOnline(users[j].getId()))
 						{
 							messages[i].setReceiverId(users[j].getId());
 							messagesToSend.push_back(messages[i]);
@@ -170,13 +177,24 @@ void* Server::sendToAllClientsThread(void *t_data)
 			//send all messages in vector messagesToSend
 			for(size_t i = 0; i < messagesToSend.size(); i++)
 			{
-				sendResult = sendMessage(messagesToSend[i].getType(), messagesToSend[i].getSenderId(), messagesToSend[i].getReceiverId(), messagesToSend[i].getContent());
-				
-				if(sendResult == true)
+				if(messagesToSend[i].getType() == MESSAGE_TYPE_RESPONSE)
 				{
-					cout << "Message has been sent from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
+					sendResult = sendResponseMessage(messagesToSend[i].getReceiverFd(), messagesToSend[i].getContent());
+					
+					if(sendResult == true)
+						cout << "Response message has been sent to: " << messagesToSend[i].getReceiverFd() << "(fd) with content: " << messagesToSend[i].getContent() << endl;
+					else
+						cout << "Sending response message went wrong to: " << messagesToSend[i].getReceiverFd() << "(fd) with content: " << messagesToSend[i].getContent() << endl;
 				}
-				else cout << "Sending message went wrong from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
+				else
+				{
+					sendResult = sendMessage(messagesToSend[i].getType(), messagesToSend[i].getSenderId(), messagesToSend[i].getReceiverId(), messagesToSend[i].getContent());
+					
+					if(sendResult == true)
+						cout << "Message has been sent from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
+					else 
+						cout << "Sending message went wrong from: " << messagesToSend[i].getSenderId() << " to: " << messagesToSend[i].getReceiverId() << " with content: " << messagesToSend[i].getContent() << endl;
+				}
 			}
 		}
 		pthread_mutex_unlock(&messagesMutex);
@@ -214,7 +232,12 @@ void* Server::readFromSingleClientThread(void *t_data)
 			int messageType = atoi(messageHeader.substr(0, delimiterIndex).c_str()); //type of the message
 			int messageSize = atoi(messageHeader.substr(delimiterIndex + 1, messageHeader.length()).c_str()); //size of the message
 			
-			if(messageType == MESSAGE_TYPE_REGISTER)
+			//to end connection send message -9
+			if(messageType == MESSAGE_TYPE_END_CONNECTION)
+			{
+				readResult = 0;
+			}
+			else if(messageType == MESSAGE_TYPE_REGISTER)
 			{
 				messageBody = getMessageBody((*th_data).clientFd, messageSize);
 				int newUserId = registerUser((*th_data).clientFd, messageBody);
@@ -225,11 +248,13 @@ void* Server::readFromSingleClientThread(void *t_data)
 					loggedUserId = newUserId;
 					
 					userGoOnlineById(loggedUserId);
+					createResponseMessage(MESSAGE_TYPE_REGISTER, (*th_data).clientFd, SUCCESS);
 					createMessageForNewClient(loggedUserId);
 					createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
 				}
 				else
 				{
+					createResponseMessage(MESSAGE_TYPE_REGISTER, (*th_data).clientFd, ERROR);
 					cout << "User already exists." << endl;
 				}
 			}
@@ -243,11 +268,13 @@ void* Server::readFromSingleClientThread(void *t_data)
 					loggedUserId = newUserId;
 					
 					userGoOnlineById(loggedUserId);
+					createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, SUCCESS);
 					createMessageForNewClient(loggedUserId);
 					createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
 				}
 				else
 				{
+					createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, ERROR);
 					cout << "Wrong username or password." << endl;
 				}
 			}
@@ -266,28 +293,38 @@ void* Server::readFromSingleClientThread(void *t_data)
 	
 	cout << "Killed thread: " << (*th_data).clientFd << endl; 
 	
-	userGoOfflineById(loggedUserId);
-	createNotificationMessageUserStatus(loggedUserId, USER_OFFLINE);
+	if(loggedUserId != -1)
+	{
+		userGoOfflineById(loggedUserId);
+		createNotificationMessageUserStatus(loggedUserId, USER_OFFLINE);
+	}
+	
     pthread_exit(NULL);
 }
 
 
 int Server::registerUser(int clientFd, string messageBody)
 {
+	int loggedUserId = -2;
 	int delimiterIndex = messageBody.find("&");
 	
 	string username = messageBody.substr(0, delimiterIndex);
 	string password = messageBody.substr(delimiterIndex + 1, messageBody.length());
 	
 	pthread_mutex_lock(&usersMutex);
+	
 	//checks for existing username
 	for(size_t i = 0; i < users.size(); i++)
 		if(users[i].getUsername() == username)
-			return -1;	
+			 loggedUserId = -1;	
 	
-	//push new user to vector and assign his id to variable
-	users.push_back(User(clientFd, username, password));
-	int loggedUserId = users[users.size() - 1].getId();
+	if(loggedUserId != -1)
+	{
+		//push new user to vector and assign his id to variable
+		users.push_back(User(clientFd, username, password));
+		loggedUserId = users[users.size() - 1].getId();	
+	}
+	
 	pthread_mutex_unlock(&usersMutex);
 	
 	cout << "User has been created with login: " << username << " and password: " << password << endl;
@@ -297,6 +334,7 @@ int Server::registerUser(int clientFd, string messageBody)
 
 int Server::loginUser(int clientFd, string messageBody)
 {
+	int loggedUserId = -1;
 	int delimiterIndex = messageBody.find("&");
 	
 	string username = messageBody.substr(0, delimiterIndex);
@@ -308,16 +346,27 @@ int Server::loginUser(int clientFd, string messageBody)
 		if(users[i].getUsername() == username && users[i].validatePassword(password))
 		{
 			users[i].setFd(clientFd); //change user's fd
-			int loggedUserId = users[i].getId();
+			loggedUserId = users[i].getId();
 			
 			cout << "User has logged in with login: " << username << " and password: " << password << endl;
 			
-			return loggedUserId;
+			break;
 		}
 	}
 	pthread_mutex_unlock(&usersMutex);
 	
-	return -1;
+	return loggedUserId;
+}
+
+
+void Server::createResponseMessage(int type, int clientFd, int result)
+{
+	pthread_mutex_lock(&messagesMutex);
+
+	string content = to_string(type) + "&" + to_string(result);
+	messages.push_back(Message(MESSAGE_TYPE_RESPONSE, clientFd, content));
+	
+	pthread_mutex_unlock(&messagesMutex);
 }
 
 
@@ -392,6 +441,17 @@ bool Server::sendMessage(int messageType, int senderId, int receiverId, string c
 }
 
 
+bool Server::sendResponseMessage(int receiverFd, string content)
+{
+	char buffer[content.length() + 1];
+	strcpy(buffer, content.c_str());
+	
+	int sendMessageResult = write(receiverFd, buffer, sizeof(buffer));
+	
+	return sendMessageResult;
+}
+
+
 string Server::getMessageBody(int clientFd, int size)
 {
 	char buffer[BUFFER_SIZE];
@@ -442,7 +502,7 @@ string Server::getUsernameById(int userId)
 		if(users[i].getId() == userId)
 			return users[i].getUsername();
 		
-	return NULL;
+	return "";
 }
 
 

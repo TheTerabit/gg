@@ -17,19 +17,23 @@
 #include "User.h"
 #include "Message.h"
 
-#define SERVER_PORT 1234
+
 #define QUEUE_SIZE 5
 #define BUFFER_SIZE 50
 #define SERVER_ID -1
 
+#define MESSAGE_TYPE_END_CONNECTION -9
 #define MESSAGE_TYPE_REGISTER 0
 #define MESSAGE_TYPE_LOGIN 1
 #define MESSAGE_TYPE_CLIENT_CLIENT 2
 #define MESSAGE_TYPE_SERVER_CLIENT 3
 #define MESSAGE_TYPE_FOR_NEW_CLIENT 4
 #define MESSAGE_TYPE_NOTIFICATIONS 5
+#define MESSAGE_TYPE_RESPONSE 6
 #define USER_ONLINE 1
 #define USER_OFFLINE 0
+#define ERROR 0
+#define SUCCESS 1
 
 
 using namespace std;
@@ -42,6 +46,7 @@ struct thread_data_t
 class Server
 {
 	private:
+		int serverPort;
 		int server_socket_descriptor;
 		char reuse_addr_val;
 		static vector <Message> messages;
@@ -70,10 +75,12 @@ class Server
 		static bool createMessageToSend(int loggedUserId, string messageContent);
 		static void userGoOnlineById(int userId);
 		static void userGoOfflineById(int userId);
+		static void createResponseMessage(int type, int clientFd, int result);
+		static bool sendResponseMessage(int receiverFd, string content);
 	
 	
 	public:
-		Server();
+		Server(int serverPort);
 		void setup();
 		void start();
 };
