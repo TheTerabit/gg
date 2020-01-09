@@ -419,8 +419,8 @@ bool Server::sendMessage(int messageType, int senderId, int receiverId, string c
 	
 	if(receiverFd == -1) return false;
 	
-	string bodyMessage = to_string(senderId) + "&" + content;
-	string headerMessage = to_string(messageType) + "&" + to_string(bodyMessage.length() - 1);
+	string bodyMessage = to_string(senderId) + "&" + content + "\n";
+	string headerMessage = to_string(messageType) + "&" + to_string(bodyMessage.length() - 1) + "\n";
 	
 	//send message with type and size of the message
 	//bufferHeader contains type of the message, sign & and length of the incoming message
@@ -443,6 +443,7 @@ bool Server::sendMessage(int messageType, int senderId, int receiverId, string c
 
 bool Server::sendResponseMessage(int receiverFd, string content)
 {
+	content = content + "\n";
 	char buffer[content.length() + 1];
 	strcpy(buffer, content.c_str());
 	
