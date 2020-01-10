@@ -7,11 +7,13 @@ public class User {
     private SimpleStringProperty username;
     private int id;
     private SimpleStringProperty status;
+    private StringBuffer stringBuffer;
 
     public User(int id, String username, Boolean status) {
         this.username = new SimpleStringProperty(username);
         this.id = id;
         setStatus(status);
+        this.stringBuffer = new StringBuffer();
     }
 
     public String getUsername() {
@@ -39,5 +41,12 @@ public class User {
             this.status = new SimpleStringProperty("online");
         else
             this.status = new SimpleStringProperty("");
+    }
+
+    public void saveMessage(String message) {
+        stringBuffer.append(message);
+    }
+    public String getMessages(){
+        return stringBuffer.toString();
     }
 }

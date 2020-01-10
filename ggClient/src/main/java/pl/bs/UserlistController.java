@@ -6,6 +6,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.TableColumn;
@@ -42,7 +43,7 @@ public class UserlistController implements Initializable {
         t1.start();
     }
 
-    public void openChat(ActionEvent actionEvent) {
+    public void openChat1(ActionEvent actionEvent) {
 
         User user = tbl_users.getSelectionModel().getSelectedItem();
         System.out.println(user.getUsername());
@@ -74,4 +75,43 @@ public class UserlistController implements Initializable {
         col_status.setCellValueFactory(new PropertyValueFactory<User, String>("status"));
 
     }
+
+    @FXML
+    private void openChat(ActionEvent event){
+        User user = tbl_users.getSelectionModel().getSelectedItem();
+        System.out.println(user.getUsername());
+        System.out.println(user.getId());
+
+        Stage stage = new Stage();
+        Parent chat = null;
+        try {
+
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getClassLoader().getResource(
+                            "Chat.fxml"
+                    )
+            );
+            chat = loader.load();
+
+            ChatController chatController = loader.<ChatController>getController();
+
+
+            chatController.initData(writer, reader, users, user);
+
+
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        stage.setTitle(user.getUsername());
+        stage.setScene(new Scene(chat));
+        stage.setResizable(false);
+        stage.show();
+
+
+
+    }
+
 }

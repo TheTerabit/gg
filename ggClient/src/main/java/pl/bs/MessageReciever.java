@@ -29,13 +29,42 @@ public class MessageReciever implements Runnable {
                 e.printStackTrace();
             }
             String s = new String(serverMessage);
-            System.out.println(s);
-            User user = processMessage(s);
-            updateUsers(user);
-            refreshTable();
+            System.out.println("#"+s+"#");
+            if(s.trim().startsWith("2")){
+                addMessage(s);
+            }
+            else if(s.length()==0){
+                System.out.println("skipped");
+                continue;
+            }
+            else{
+                User user = processMessage(s);
+                updateUsers(user);
+                refreshTable();
+            }
+
         }
     }
+
+    private void addMessage(String message){
+        String id = message.split("&")[1];
+        String text = message.split("&")[2];
+        User u = null;
+        for(User i: users){
+            if(i.getId() == Integer.parseInt(id)){
+                u=i;
+            }
+        }
+        if(u!=null)
+            users.remove(u);
+
+        u.saveMessage(u.getUsername()+": "+text+"\n");
+
+        users.add(u);
+    }
+
     private User processMessage(String message){
+        System.out.println(message.length());
         message = message.substring(1,message.length());
         String id = message.split("&")[1];
         String username = message.split("&")[2].split("%")[0];
