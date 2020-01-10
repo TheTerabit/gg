@@ -363,7 +363,7 @@ void Server::createResponseMessage(int type, int clientFd, int result)
 {
 	pthread_mutex_lock(&messagesMutex);
 
-	string content = to_string(type) + "&" + to_string(result);
+	string content = to_string(MESSAGE_TYPE_RESPONSE) + "&" + to_string(type) + "&" + to_string(result);
 	messages.push_back(Message(MESSAGE_TYPE_RESPONSE, clientFd, content));
 	
 	pthread_mutex_unlock(&messagesMutex);
@@ -419,55 +419,60 @@ bool Server::sendMessage(int messageType, int senderId, int receiverId, string c
 	
 	if(receiverFd == -1) return false;
 	
-	string bodyMessage = to_string(senderId) + "&" + content + "\n";
-	string headerMessage = to_string(messageType) + "&" + to_string(bodyMessage.length() - 1) + "\n";
-	
-	//send message with type and size of the message
-	//bufferHeader contains type of the message, sign & and length of the incoming message
-	char bufferHeader[headerMessage.length() + 1];
-	strcpy(bufferHeader, headerMessage.c_str());
-	
-	int writeHeaderResult = write(receiverFd, bufferHeader, sizeof(bufferHeader));
-	if(writeHeaderResult == -1) return false;
+	string bodyMessage = to_string(messageType) + "&" + to_string(senderId) + "&" + content + "\n";
 	
 	//send message with content
-	char bufferBody[bodyMessage.length() + 1];
+	char bufferBody[bodyMessage.length()];
 	strcpy(bufferBody, bodyMessage.c_str());
 	
-	int writeBodyResult = write(receiverFd, bufferBody, sizeof(bufferBody));
-	
-	if(writeBodyResult == -1) return false;
-	else return true;
+	int writeResult = 0;
+	int wroteBytes = 0;
+	do
+	{
+		writeResult = write(receiverFd, bufferBody, sizeof(bufferBody));
+		if(writeResult == -1) return false;
+		
+		wroteBytes += writeResult;
+	} while(wroteBytes < (int)bodyMessage.length());
+		
+	return true;
 }
 
 
 bool Server::sendResponseMessage(int receiverFd, string content)
 {
 	content = content + "\n";
-	char buffer[content.length() + 1];
+	char buffer[content.length()];
 	strcpy(buffer, content.c_str());
 	
-	int sendMessageResult = write(receiverFd, buffer, sizeof(buffer));
-	
-	return sendMessageResult;
+	int writeResult = 0;
+	int wroteBytes = 0;
+	do
+	{
+		writeResult = write(receiverFd, buffer, sizeof(buffer));
+		if(writeResult == -1) return false;
+		
+		wroteBytes += writeResult;
+	} while(wroteBytes < (int)content.length());
+
+	return true;
 }
 
 
 string Server::getMessageBody(int clientFd, int size)
 {
-	char buffer[BUFFER_SIZE];
-	int receivedSize = 0;
-	int readResult = 1;
-	string message;
-
-	//read until received size is smaller than size of the message from client
-	while(receivedSize < size && readResult > 0)
+	char buffer[size + 1];
+	int readSize = 0;
+	int readResult = 0;
+	string message = "";
+	
+	do
 	{
 		memset(buffer, 0, sizeof(buffer));
 		readResult = read(clientFd, buffer, sizeof(buffer));
-		receivedSize += readResult;
+		readSize += readResult;
 		message += buffer;
-	}
+	} while(readSize < size && readResult > 0);
 	
 	return message;
 }
