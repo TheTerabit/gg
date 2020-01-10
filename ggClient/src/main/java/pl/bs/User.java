@@ -38,6 +38,6 @@ public class User {
         if(status)
             this.status = new SimpleStringProperty("online");
         else
-            this.status = new SimpleStringProperty("offline");
+            this.status = new SimpleStringProperty("");
     }
 }

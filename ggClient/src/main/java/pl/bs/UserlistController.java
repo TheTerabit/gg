@@ -36,7 +36,10 @@ public class UserlistController implements Initializable {
         this.reader = reader;
         this.users = users;
         tbl_users.setItems(users);
-
+        Thread t1 = new Thread(new MessageReciever(reader, users, tbl_users));
+        //MessageReciever messageReciever = new MessageReciever(reader, users);
+        t1.setDaemon(true);
+        t1.start();
     }
 
     public void openChat(ActionEvent actionEvent) {
