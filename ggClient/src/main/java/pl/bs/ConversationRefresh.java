@@ -18,6 +18,7 @@ public class ConversationRefresh implements Runnable {
 
     @Override
     public void run() {
+        boolean online=false;
         while(true){
             User u = null;
             for(User i: users){
@@ -25,7 +26,15 @@ public class ConversationRefresh implements Runnable {
                     u = i;
                 }
             }
-            textArea.setText(u.getMessages());
+            if(u.getStatus().equals("")) {
+                if (online)
+                    textArea.setText(u.getMessages() + u.getUsername() + " is offline.\n");
+                online = false;
+            }
+            else {
+                textArea.setText(u.getMessages());
+                online = true;
+            }
             textArea.setScrollTop(Double.MAX_VALUE);
             try {
                 Thread.sleep(500);

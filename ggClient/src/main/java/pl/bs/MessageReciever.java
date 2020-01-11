@@ -1,7 +1,16 @@
 package pl.bs;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import org.controlsfx.control.Notifications;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -48,7 +57,13 @@ public class MessageReciever implements Runnable {
 
     private void addMessage(String message){
         String id = message.split("&")[1];
-        String text = message.split("&")[2];
+        String text = null;
+        try {
+            text = message.split("&")[2];
+        }catch (Exception e){
+            text ="";
+        }
+
         User u = null;
         for(User i: users){
             if(i.getId() == Integer.parseInt(id)){
@@ -61,6 +76,55 @@ public class MessageReciever implements Runnable {
         u.saveMessage(u.getUsername()+": "+text+"\n");
 
         users.add(u);
+        final User nu = u;
+        final String nt = text;
+        /*Platform.runLater(new Thread (new Runnable() {
+            @Override
+            public void run() {
+                Stage stage = new Stage();
+                Parent notification = null;
+                try {
+
+                    FXMLLoader loader = new FXMLLoader(
+                            getClass().getClassLoader().getResource(
+                                    "Notification.fxml"
+                            )
+                    );
+                    notification = loader.load();
+
+                    NotificationController notificationController = loader.<NotificationController>getController();
+
+
+                    notificationController.initData(nu.getUsername(),nt);
+
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
+                stage.setTitle("GG");
+                stage.setX(1590);
+                stage.setY(940);
+                stage.setScene(new Scene(notification));
+                stage.setResizable(false);
+                stage.show();
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                stage.close();
+            }
+        }));
+        */
+
+
+        //Thread t1 = new Thread(new Notification(u.getUsername(), message));
+        //t1.setDaemon(true);
+        //t1.start();
+
+        //Notifications.create().title(u.getUsername()+":").text(message).showConfirm();
+        //Toast.show(message, tbl_users);
     }
 
     private User processMessage(String message){
