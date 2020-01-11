@@ -88,7 +88,7 @@ public class MessageReciever implements Runnable {
         }
         if(u!=null)
             users.remove(u);
-
+        user.setStringBuffer(u.getStringBuffer());
         users.add(user);
     }
 

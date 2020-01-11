@@ -2,6 +2,7 @@ package pl.bs;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TextArea;
+import javafx.stage.Stage;
 
 public class ConversationRefresh implements Runnable {
 
@@ -25,12 +26,13 @@ public class ConversationRefresh implements Runnable {
                 }
             }
             textArea.setText(u.getMessages());
-
+            textArea.setScrollTop(Double.MAX_VALUE);
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
         }
     }
 }

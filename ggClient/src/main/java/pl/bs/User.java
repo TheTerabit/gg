@@ -49,4 +49,12 @@ public class User {
     public String getMessages(){
         return stringBuffer.toString();
     }
+
+    public void setStringBuffer(StringBuffer stringBuffer) {
+        this.stringBuffer = stringBuffer;
+    }
+
+    public StringBuffer getStringBuffer() {
+        return stringBuffer;
+    }
 }

@@ -9,6 +9,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -88,6 +89,13 @@ public class Controller implements Initializable {
                 openUserlist(actionEvent, txt_username1.getText());
 
             }
+            else{
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("");
+                alert.setHeaderText("Unsuccessful login atempt");
+                alert.setContentText("Check your username and password.");
+                alert.showAndWait();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -129,6 +137,14 @@ public class Controller implements Initializable {
                     getUsers(s);
                     openUserlist(actionEvent, txt_username2.getText());
                 }
+                else{
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("");
+                    alert.setHeaderText("Registration unsuccessful");
+                    alert.setContentText("Type another username");
+
+                    alert.showAndWait();
+                }
 
 
             } catch (IOException e) {
@@ -136,8 +152,15 @@ public class Controller implements Initializable {
             }
             System.out.println("done");
 
-        } else
+        } else {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("");
+            alert.setHeaderText("Password mismatch");
+            alert.setContentText("Type the password once again.");
+
+            alert.showAndWait();
             System.out.println("Password mismatch");
+        }
     }
     private String fillMessage(String message){
         StringBuilder stringBuilder = new StringBuilder(message);

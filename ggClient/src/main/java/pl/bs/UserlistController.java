@@ -9,6 +9,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -81,35 +82,41 @@ public class UserlistController implements Initializable {
         User user = tbl_users.getSelectionModel().getSelectedItem();
         System.out.println(user.getUsername());
         System.out.println(user.getId());
+        if(user.getStatus().equals("online")) {
+            Stage stage = new Stage();
+            Parent chat = null;
+            try {
 
-        Stage stage = new Stage();
-        Parent chat = null;
-        try {
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getClassLoader().getResource(
+                                "Chat.fxml"
+                        )
+                );
+                chat = loader.load();
 
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getClassLoader().getResource(
-                            "Chat.fxml"
-                    )
-            );
-            chat = loader.load();
-
-            ChatController chatController = loader.<ChatController>getController();
-
-
-            chatController.initData(writer, reader, users, user);
+                ChatController chatController = loader.<ChatController>getController();
 
 
+                chatController.initData(writer, reader, users, user, stage);
 
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            stage.setTitle(user.getUsername());
+            stage.setScene(new Scene(chat));
+            stage.setResizable(false);
+            stage.show();
         }
+        else{
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("");
+            alert.setHeaderText("Chosen user is offline");
+            alert.setContentText("You can message active users only.");
 
-        stage.setTitle(user.getUsername());
-        stage.setScene(new Scene(chat));
-        stage.setResizable(false);
-        stage.show();
-
+            alert.showAndWait();
+        }
 
 
     }
