@@ -74,7 +74,7 @@ public class MessageReciever implements Runnable {
             users.remove(u);
 
         u.saveMessage(u.getUsername()+": "+text+"\n");
-
+        u.setNewMessage("M");
         users.add(u);
         final User nu = u;
         final String nt = text;
