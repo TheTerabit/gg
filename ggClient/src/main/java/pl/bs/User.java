@@ -7,11 +7,26 @@ public class User {
     private SimpleStringProperty username;
     private int id;
     private SimpleStringProperty status;
+    private StringBuffer stringBuffer;
+    private SimpleStringProperty newMessage;
+
+    public String getNewMessage() {
+        return newMessage.get();
+    }
+
+
+    public void setNewMessage(String newMessage) {
+        this.newMessage.set(newMessage);
+    }
+
+
 
     public User(int id, String username, Boolean status) {
         this.username = new SimpleStringProperty(username);
         this.id = id;
         setStatus(status);
+        this.stringBuffer = new StringBuffer();
+        this.newMessage = new SimpleStringProperty("");
     }
 
     public String getUsername() {
@@ -38,6 +53,21 @@ public class User {
         if(status)
             this.status = new SimpleStringProperty("online");
         else
-            this.status = new SimpleStringProperty("offline");
+            this.status = new SimpleStringProperty("");
+    }
+
+    public void saveMessage(String message) {
+        stringBuffer.append(message);
+    }
+    public String getMessages(){
+        return stringBuffer.toString();
+    }
+
+    public void setStringBuffer(StringBuffer stringBuffer) {
+        this.stringBuffer = stringBuffer;
+    }
+
+    public StringBuffer getStringBuffer() {
+        return stringBuffer;
     }
 }
