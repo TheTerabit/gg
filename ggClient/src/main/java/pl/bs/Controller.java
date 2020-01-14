@@ -67,7 +67,7 @@ public class Controller implements Initializable {
             writer = new PrintWriter(os, true);
             writer.println(msg1);
             writer.println(msg2);
-            writer.print("");
+            //writer.print("");
             System.out.println("wyslane");
             reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             String serverMessage = "";
@@ -114,9 +114,11 @@ public class Controller implements Initializable {
                 os = clientSocket.getOutputStream();
                 is = clientSocket.getInputStream();
                 writer = new PrintWriter(os, true);
+                System.out.println("#"+msg1+"#");
+                System.out.println("#"+msg2+"#");
                 writer.println(msg1);
                 writer.println(msg2);
-                writer.print("");
+                //writer.print("");
                 System.out.println("wyslane");
                 reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
                 String serverMessage = "";
@@ -128,13 +130,17 @@ public class Controller implements Initializable {
                 System.out.println(s);
 
                 if(s.endsWith("1")){
+                    if(s.startsWith("6")) {
+                        serverMessage = reader.readLine();
 
-                    serverMessage = reader.readLine();
+                        s = new String(serverMessage);
 
-                    s = new String(serverMessage);
-
-                    System.out.println(s);
-                    getUsers(s);
+                        System.out.println(s);
+                        getUsers(s);
+                    }
+                    else {
+                        getUsers("");
+                    }
                     openUserlist(actionEvent, txt_username2.getText());
                 }
                 else{
@@ -181,6 +187,7 @@ public class Controller implements Initializable {
             User user = new User(Integer.parseInt(attributes[0]),attributes[1],b);
             users.add(user);
         }
+        System.out.println("users fetched");
     }
 
     private void openUserlist(ActionEvent event, String username){

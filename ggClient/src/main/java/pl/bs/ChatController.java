@@ -1,6 +1,5 @@
 package pl.bs;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -22,7 +21,6 @@ public class ChatController {
     private ObservableList<User> users;
     private User friend;
     private Stage stage;
-    Thread t1;
 
     @FXML
     TextArea txt_conversation;
@@ -61,7 +59,6 @@ public class ChatController {
             users.remove(u);
         }
         u.saveMessage("ja: " + message + "\n");
-        // u.setNewMessage("M");
         users.add(u);
 
         //txt_conversation.setText(u.getMessages());
@@ -80,18 +77,9 @@ public class ChatController {
         this.users = users;
         this.friend = friend;
         this.stage = stage;
-        t1 = new Thread(new ConversationRefresh(txt_conversation, users, friend));
+        Thread t1 = new Thread(new ConversationRefresh(txt_conversation, users, friend));
         //MessageReciever messageReciever = new MessageReciever(reader, users);
         t1.setDaemon(true);
         t1.start();
     }
-    public void shutdown() {
-        // cleanup code here...
-        System.out.println("Stop");
-        t1.stop();
-        // note that typically (i.e. if Platform.isImplicitExit() is true, which is the default)
-        // closing the last open window will invoke Platform.exit() anyway
-        //Platform.exit();
-    }
-
 }

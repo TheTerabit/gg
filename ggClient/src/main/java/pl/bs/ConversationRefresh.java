@@ -26,12 +26,6 @@ public class ConversationRefresh implements Runnable {
                     u = i;
                 }
             }
-            if(u!=null){
-                users.remove(u);
-            }
-            u.setNewMessage("");
-            users.add(u);
-
             if(u.getStatus().equals("")) {
                 if (online)
                     textArea.setText(u.getMessages() + u.getUsername() + " is offline.\n");

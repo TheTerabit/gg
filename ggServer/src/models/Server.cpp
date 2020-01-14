@@ -240,66 +240,42 @@ void* Server::readFromSingleClientThread(void *t_data)
 			else if(messageType == MESSAGE_TYPE_REGISTER)
 			{
 				messageBody = getMessageBody((*th_data).clientFd, messageSize);
+				int newUserId = registerUser((*th_data).clientFd, messageBody);
 				
-				if(loggedUserId == -1)
+				//if there is not error
+				if(newUserId != -1) 
 				{
-					int newUserId = registerUser((*th_data).clientFd, messageBody);
+					loggedUserId = newUserId;
 					
-					if(newUserId == -1)
-					{
-						createResponseMessage(MESSAGE_TYPE_REGISTER, (*th_data).clientFd, ERROR);
-						cout << "User already exists." << endl;
-					}
-					//if there is not error
-					else if(newUserId != -1) 
-					{
-						loggedUserId = newUserId;
-
-						userGoOnlineById(loggedUserId);
-						createResponseMessage(MESSAGE_TYPE_REGISTER, (*th_data).clientFd, SUCCESS);
-						createMessageForNewClient(loggedUserId);
-						createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
-					}
+					userGoOnlineById(loggedUserId);
+					createResponseMessage(MESSAGE_TYPE_REGISTER, (*th_data).clientFd, SUCCESS);
+					createMessageForNewClient(loggedUserId);
+					createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
 				}
 				else
 				{
 					createResponseMessage(MESSAGE_TYPE_REGISTER, (*th_data).clientFd, ERROR);
-					cout << "You are already logged in." << endl;
+					cout << "User already exists." << endl;
 				}
-				
 			}
 			else if(messageType == MESSAGE_TYPE_LOGIN)
 			{
 				messageBody = getMessageBody((*th_data).clientFd, messageSize);
-
-				if(loggedUserId == -1)
+				int newUserId = loginUser((*th_data).clientFd, messageBody);
+				
+				if(newUserId != -1)
 				{
-					int newUserId = loginUser((*th_data).clientFd, messageBody);
+					loggedUserId = newUserId;
 					
-					if(newUserId == -1)
-					{
-						createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, ERROR);
-						cout << "Wrong username or password." << endl;
-					}
-					else if(newUserId == -2)
-					{
-						createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, ERROR);
-						cout << "User is already logged in." << endl;
-					}
-					else
-					{
-						loggedUserId = newUserId;
-
-						userGoOnlineById(loggedUserId);
-						createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, SUCCESS);
-						createMessageForNewClient(loggedUserId);
-						createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
-					}
+					userGoOnlineById(loggedUserId);
+					createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, SUCCESS);
+					createMessageForNewClient(loggedUserId);
+					createNotificationMessageUserStatus(loggedUserId, USER_ONLINE);
 				}
 				else
 				{
 					createResponseMessage(MESSAGE_TYPE_LOGIN, (*th_data).clientFd, ERROR);
-					cout << "You are already logged in." << endl;
+					cout << "Wrong username or password." << endl;
 				}
 			}
 			else if(messageType == MESSAGE_TYPE_CLIENT_CLIENT)
@@ -347,7 +323,6 @@ int Server::registerUser(int clientFd, string messageBody)
 		//push new user to vector and assign his id to variable
 		users.push_back(User(clientFd, username, password));
 		loggedUserId = users[users.size() - 1].getId();	
-		
 		cout << "User has been created with login: " << username << " and password: " << password << endl;
 	}
 	
@@ -370,17 +345,11 @@ int Server::loginUser(int clientFd, string messageBody)
 	{
 		if(users[i].getUsername() == username && users[i].validatePassword(password))
 		{
-			if(users[i].isOnline() == false)
-			{
-				users[i].setFd(clientFd); //change user's fd
-				loggedUserId = users[i].getId();
-
-				cout << "User has logged in with login: " << username << " and password: " << password << endl;
-			}
-			else
-			{
-				loggedUserId = -2;
-			}
+			users[i].setFd(clientFd); //change user's fd
+			loggedUserId = users[i].getId();
+			
+			cout << "User has logged in with login: " << username << " and password: " << password << endl;
+			
 			break;
 		}
 	}
@@ -393,8 +362,12 @@ int Server::loginUser(int clientFd, string messageBody)
 void Server::createResponseMessage(int type, int clientFd, int result)
 {
 	pthread_mutex_lock(&messagesMutex);
+	string content;
 
-	string content = to_string(MESSAGE_TYPE_RESPONSE) + "&" + to_string(type) + "&" + to_string(result);
+	if(users.size() == 1)
+		content = to_string(8) + "&" + to_string(type) + "&" + to_string(result);
+	else 
+		content = to_string(MESSAGE_TYPE_RESPONSE) + "&" + to_string(type) + "&" + to_string(result);
 	messages.push_back(Message(MESSAGE_TYPE_RESPONSE, clientFd, content));
 	
 	pthread_mutex_unlock(&messagesMutex);
@@ -414,11 +387,13 @@ void Server::createMessageForNewClient(int loggedUserId)
 	pthread_mutex_unlock(&usersMutex);
 	
 	if(messageContent != "")
+	{
 		messageContent.erase(messageContent.begin());
-	
-	pthread_mutex_lock(&messagesMutex);
-	messages.push_back(Message(MESSAGE_TYPE_SERVER_CLIENT, SERVER_ID, loggedUserId, messageContent));
-	pthread_mutex_unlock(&messagesMutex);
+		
+		pthread_mutex_lock(&messagesMutex);
+		messages.push_back(Message(MESSAGE_TYPE_SERVER_CLIENT, SERVER_ID, loggedUserId, messageContent));
+		pthread_mutex_unlock(&messagesMutex);
+	}
 }
 
 
@@ -490,7 +465,7 @@ bool Server::sendResponseMessage(int receiverFd, string content)
 
 string Server::getMessageBody(int clientFd, int size)
 {
-	char buffer[size + 1];
+	char buffer[size + 2];
 	int readSize = 0;
 	int readResult = 0;
 	string message = "";
@@ -502,7 +477,7 @@ string Server::getMessageBody(int clientFd, int size)
 		readSize += readResult;
 		message += buffer;
 	} while(readSize < size && readResult > 0);
-	cout<< "READ: #" << message << "#" << endl;
+	
 	return message;
 }
 

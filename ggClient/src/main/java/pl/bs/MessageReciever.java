@@ -2,14 +2,19 @@ package pl.bs;
 
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
+import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.controlsfx.control.Notifications;
 
 import java.io.BufferedReader;
@@ -42,7 +47,7 @@ public class MessageReciever implements Runnable {
             if(s.trim().startsWith("2")){
                 addMessage(s);
             }
-            else if(s.length()==0){
+            else if((s.length()==0)||(s.startsWith("6"))){
                 System.out.println("skipped");
                 continue;
             }
@@ -55,26 +60,26 @@ public class MessageReciever implements Runnable {
         }
     }
 
-    private void addMessage(String message){
+    private void addMessage(String message) {
         String id = message.split("&")[1];
         String text = null;
         try {
             text = message.split("&")[2];
-        }catch (Exception e){
-            text ="";
+        } catch (Exception e) {
+            text = "";
         }
 
         User u = null;
-        for(User i: users){
-            if(i.getId() == Integer.parseInt(id)){
-                u=i;
+        for (User i : users) {
+            if (i.getId() == Integer.parseInt(id)) {
+                u = i;
             }
         }
-        if(u!=null)
+        if (u != null)
             users.remove(u);
 
-        u.saveMessage(u.getUsername()+": "+text+"\n");
-        u.setNewMessage("M");
+        u.saveMessage(u.getUsername() + ": " + text + "\n");
+
         users.add(u);
         final User nu = u;
         final String nt = text;
@@ -122,11 +127,12 @@ public class MessageReciever implements Runnable {
         //Thread t1 = new Thread(new Notification(u.getUsername(), message));
         //t1.setDaemon(true);
         //t1.start();
-
+        //
         //Notifications.create().title(u.getUsername()+":").text(message).showConfirm();
         //Toast.show(message, tbl_users);
-    }
 
+
+    }
     private User processMessage(String message){
         System.out.println(message.length());
         message = message.substring(1,message.length());
@@ -150,9 +156,10 @@ public class MessageReciever implements Runnable {
                 u=i;
             }
         }
-        if(u!=null)
+        if(u!=null) {
             users.remove(u);
-        user.setStringBuffer(u.getStringBuffer());
+            user.setStringBuffer(u.getStringBuffer());
+        }
         users.add(user);
     }
 

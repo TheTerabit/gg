@@ -29,8 +29,6 @@ public class UserlistController implements Initializable {
 
     TableColumn col_status = new TableColumn("status");
 
-    TableColumn col_message = new TableColumn("");
-
     private PrintWriter writer;
     private BufferedReader reader;
     private ObservableList<User> users = FXCollections.observableArrayList();
@@ -71,13 +69,11 @@ public class UserlistController implements Initializable {
         createTable();
     }
     private void createTable(){
-        col_username.setPrefWidth(200);
-        col_message.setPrefWidth(25);
-        tbl_users.getColumns().addAll(col_username, col_message, col_status);
+        col_username.setPrefWidth(220);
+        tbl_users.getColumns().addAll(col_username, col_status);
         PropertyValueFactory propertyValueFactory = new PropertyValueFactory<User, String>("username");
         col_username.setCellValueFactory(propertyValueFactory);
         col_status.setCellValueFactory(new PropertyValueFactory<User, String>("status"));
-        col_message.setCellValueFactory(new PropertyValueFactory<User, String>("newMessage"));
 
     }
 
@@ -102,7 +98,7 @@ public class UserlistController implements Initializable {
 
 
                 chatController.initData(writer, reader, users, user, stage);
-                stage.setOnHidden(e -> chatController.shutdown());
+
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -111,7 +107,6 @@ public class UserlistController implements Initializable {
             stage.setTitle(user.getUsername());
             stage.setScene(new Scene(chat));
             stage.setResizable(false);
-
             stage.show();
         }
         else{

@@ -1,15 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="ggClient.jnlp">
-  <information>
-    <title>ggClient</title>
-    <vendor>Unknown</vendor>
-    <description>ggClient</description>
-    <offline-allowed/>
-  </information>
-  <resources>
-    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
-    <jar href="ggClient.jar" size="47337" download="eager" />
-  </resources>
-  <jfx:javafx-desc  width="600" height="400" main-class="pl.bs.Main"  name="ggClient" />
-  <update check="background"/>
+<?xml version="1.0" encoding="UTF-8"?><jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="ggClient.jnlp">
+    <information>
+        <title>Main</title>
+        <vendor>Unknown</vendor>
+        <description>Main</description>
+        <offline-allowed/>
+    </information>
+    <update check="background"/>
+    <resources>
+        <j2se version="9.0.4+" href="http://java.sun.com/products/autodl/j2se"/>
+        <jar href="ggClient.jar" size="46701" download="eager"/>
+    </resources>
+    <jfx:javafx-desc width="600" height="400" main-class="pl.bs.Main" name="Main"/>
 </jnlp>
+

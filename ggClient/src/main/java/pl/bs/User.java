@@ -8,25 +8,12 @@ public class User {
     private int id;
     private SimpleStringProperty status;
     private StringBuffer stringBuffer;
-    private SimpleStringProperty newMessage;
-
-    public String getNewMessage() {
-        return newMessage.get();
-    }
-
-
-    public void setNewMessage(String newMessage) {
-        this.newMessage.set(newMessage);
-    }
-
-
 
     public User(int id, String username, Boolean status) {
         this.username = new SimpleStringProperty(username);
         this.id = id;
         setStatus(status);
         this.stringBuffer = new StringBuffer();
-        this.newMessage = new SimpleStringProperty("");
     }
 
     public String getUsername() {
