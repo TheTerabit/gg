@@ -1,4 +1,4 @@
-package pl.bs;
+package pl.bs.loginWindow;
 
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -6,8 +6,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-
 
 public class Main extends Application {
 
@@ -21,10 +19,6 @@ public class Main extends Application {
         primaryStage.setScene(new Scene(root));
         primaryStage.setResizable(false);
         primaryStage.show();
-    }
-
-    public void logIn(ActionEvent actionEvent) {
-        stage.close();
     }
 
     public static void main(String[] args) {

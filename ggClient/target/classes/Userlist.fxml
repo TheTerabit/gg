@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 
 <?import javafx.scene.control.Button?>
-<AnchorPane prefHeight="565.0" prefWidth="304.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pl.bs.UserlistController">
+<AnchorPane prefHeight="565.0" prefWidth="304.0" xmlns="http://javafx.com/javafx/8.0.172-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="pl.bs.userlistWindow.UserlistController">
    <children>
       <ScrollPane layoutY="54.0">
          <content>

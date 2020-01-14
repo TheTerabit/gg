@@ -1,8 +1,8 @@
-package pl.bs;
+package pl.bs.chatWindow;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TextArea;
-import javafx.stage.Stage;
+import pl.bs.model.User;
 
 public class ConversationRefresh implements Runnable {
 
@@ -41,7 +41,7 @@ public class ConversationRefresh implements Runnable {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
         }
     }
+
 }

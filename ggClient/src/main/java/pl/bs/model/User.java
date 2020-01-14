@@ -1,11 +1,11 @@
-package pl.bs;
+package pl.bs.model;
 
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 
 public class User {
-    private SimpleStringProperty username;
+
     private int id;
+    private SimpleStringProperty username;
     private SimpleStringProperty status;
     private StringBuffer stringBuffer;
 

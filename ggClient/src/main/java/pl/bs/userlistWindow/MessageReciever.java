@@ -1,25 +1,11 @@
-package pl.bs;
+package pl.bs.userlistWindow;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
-import javafx.fxml.FXMLLoader;
-import javafx.geometry.Rectangle2D;
-import javafx.scene.Group;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.TableView;
-import javafx.scene.paint.Color;
-import javafx.stage.Modality;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-import org.controlsfx.control.Notifications;
+import pl.bs.model.User;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.List;
 
 public class MessageReciever implements Runnable {
 
@@ -56,7 +42,6 @@ public class MessageReciever implements Runnable {
                 updateUsers(user);
                 refreshTable();
             }
-
         }
     }
 
@@ -79,59 +64,9 @@ public class MessageReciever implements Runnable {
             users.remove(u);
 
         u.saveMessage(u.getUsername() + ": " + text + "\n");
-
         users.add(u);
-        final User nu = u;
-        final String nt = text;
-        /*Platform.runLater(new Thread (new Runnable() {
-            @Override
-            public void run() {
-                Stage stage = new Stage();
-                Parent notification = null;
-                try {
 
-                    FXMLLoader loader = new FXMLLoader(
-                            getClass().getClassLoader().getResource(
-                                    "Notification.fxml"
-                            )
-                    );
-                    notification = loader.load();
-
-                    NotificationController notificationController = loader.<NotificationController>getController();
-
-
-                    notificationController.initData(nu.getUsername(),nt);
-
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                Rectangle2D bounds = Screen.getPrimary().getVisualBounds();
-                stage.setTitle("GG");
-                stage.setX(1590);
-                stage.setY(940);
-                stage.setScene(new Scene(notification));
-                stage.setResizable(false);
-                stage.show();
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                stage.close();
-            }
-        }));
-        */
-
-
-        //Thread t1 = new Thread(new Notification(u.getUsername(), message));
-        //t1.setDaemon(true);
-        //t1.start();
-        //
         //Notifications.create().title(u.getUsername()+":").text(message).showConfirm();
-        //Toast.show(message, tbl_users);
-
-
     }
     private User processMessage(String message){
         System.out.println(message.length());
@@ -149,9 +84,8 @@ public class MessageReciever implements Runnable {
     }
 
     private void updateUsers(User user){
-
         User u = null;
-        for(User i: users){
+        for(User i: users) {
             if(i.getId() == user.getId()){
                 u=i;
             }
