@@ -105,8 +105,6 @@ void Server::handleConnection(int connection_socket_descriptor)
        printf("Error while creating new thread: %d\n", create_result);
        exit(-1);
     }
-
-	cout << "Created thread: " << connection_socket_descriptor << endl;
 }
 
 
@@ -408,9 +406,7 @@ bool Server::createMessageToSend(int loggedUserId, string messageBody)
 	pthread_mutex_lock(&messagesMutex);
 	messages.push_back(Message(MESSAGE_TYPE_CLIENT_CLIENT, senderId, receiverId, messageContent));
 	pthread_mutex_unlock(&messagesMutex);
-	
-	cout << "Message has been been created from: " << senderId << " to: " << receiverId << " content: " << messageContent << endl;
-	
+		
 	return true;
 }
 
@@ -427,7 +423,9 @@ bool Server::sendMessage(int messageType, int senderId, int receiverId, string c
 	
 	//send message with content
 	char bufferBody[bodyMessage.length()];
+	char bufferTemp[bodyMessage.length()];
 	strcpy(bufferBody, bodyMessage.c_str());
+	strcpy(bufferTemp, bodyMessage.c_str());
 	
 	int writeResult = 0;
 	int wroteBytes = 0;
@@ -437,6 +435,8 @@ bool Server::sendMessage(int messageType, int senderId, int receiverId, string c
 		if(writeResult == -1) return false;
 		
 		wroteBytes += writeResult;
+		char bufferBody[bodyMessage.length() - wroteBytes];
+		strncpy(bufferBody, &bufferTemp[wroteBytes], bodyMessage.length() - wroteBytes);
 	} while(wroteBytes < (int)bodyMessage.length());
 		
 	return true;
@@ -447,7 +447,9 @@ bool Server::sendResponseMessage(int receiverFd, string content)
 {
 	content = content + "\n";
 	char buffer[content.length()];
+	char bufferTemp[content.length()];
 	strcpy(buffer, content.c_str());
+	strcpy(bufferTemp, content.c_str());
 	
 	int writeResult = 0;
 	int wroteBytes = 0;
@@ -457,6 +459,8 @@ bool Server::sendResponseMessage(int receiverFd, string content)
 		if(writeResult == -1) return false;
 		
 		wroteBytes += writeResult;
+		char buffer[content.length() - wroteBytes];
+		strncpy(buffer, &bufferTemp[wroteBytes], content.length() - wroteBytes);
 	} while(wroteBytes < (int)content.length());
 
 	return true;
