@@ -54,17 +54,12 @@ public class ChatController {
         header = fillMessage(header);
         writer.println(header);
         writer.println(friend.getId() + "&" + message);
-        u = null;
-        for(User i: users){
-            if(i.getId()==friend.getId()){
-                u = i;
+
+        for(int i = 0; i < users.size(); i++) {
+            if (users.get(i).getId() == friend.getId()) {
+                users.get(i).saveMessage("ja: " + message + "\n");
             }
         }
-        if(u!=null){
-            users.remove(u);
-        }
-        u.saveMessage("ja: " + message + "\n");
-        users.add(u);
     }
 
     private String fillMessage(String message){

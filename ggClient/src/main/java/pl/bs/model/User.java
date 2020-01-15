@@ -57,4 +57,11 @@ public class User {
     public StringBuffer getStringBuffer() {
         return stringBuffer;
     }
+
+    public void setStringStatus(SimpleStringProperty status){
+        this.status = status;
+    }
+    public SimpleStringProperty getStringStatus(){
+        return this.status;
+    }
 }

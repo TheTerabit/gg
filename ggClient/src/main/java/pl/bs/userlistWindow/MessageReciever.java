@@ -54,20 +54,16 @@ public class MessageReciever implements Runnable {
             text = "";
         }
 
-        User u = null;
-        for (User i : users) {
-            if (i.getId() == Integer.parseInt(id)) {
-                u = i;
+        //
+        for(int i = 0; i < users.size(); i++) {
+            if (users.get(i).getId() == Integer.parseInt(id)) {
+                users.get(i).saveMessage(users.get(i).getUsername() + ": " + text + "\n");
             }
         }
-        if (u != null)
-            users.remove(u);
-
-        u.saveMessage(u.getUsername() + ": " + text + "\n");
-        users.add(u);
 
         //Notifications.create().title(u.getUsername()+":").text(message).showConfirm();
     }
+
     private User processMessage(String message){
         System.out.println(message.length());
         message = message.substring(1,message.length());
@@ -84,17 +80,16 @@ public class MessageReciever implements Runnable {
     }
 
     private void updateUsers(User user){
-        User u = null;
-        for(User i: users) {
-            if(i.getId() == user.getId()){
-                u=i;
+        boolean addNew = true;
+        for(int i = 0; i < users.size(); i++) {
+            if (users.get(i).getId() == user.getId()) {
+                users.get(i).setStringStatus(user.getStringStatus());
+                addNew = false;
             }
         }
-        if(u!=null) {
-            users.remove(u);
-            user.setStringBuffer(u.getStringBuffer());
-        }
-        users.add(user);
+        if(addNew)
+            users.add(user);
+
     }
 
     private void refreshTable(){
