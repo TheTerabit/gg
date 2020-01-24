@@ -297,6 +297,7 @@ void* Server::readFromSingleClientThread(void *t_data)
 		createNotificationMessageUserStatus(loggedUserId, USER_OFFLINE);
 	}
 	
+	delete th_data;
     pthread_exit(NULL);
 }
 
